@@ -90,6 +90,21 @@ impl <'info>Refund<'info> {
         close_account(cpi_ctx)
     }
 
+    pub fn close_vault(&mut self) -> Result<()> {
+
+        let close_accounts = CloseAccount {
+            account: self.escrow.to_account_info(),
+            destination: self.maker.to_account_info(),
+            authority: self.escrow.to_account_info()
+        };
+
+        let cpi_ctx = CpiContext::new(
+            self.token_program.to_account_info(),
+            close_accounts
+        );
+
+        close_account(cpi_ctx)
+    }
 
 }
 
