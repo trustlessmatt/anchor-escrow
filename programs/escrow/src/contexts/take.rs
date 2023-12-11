@@ -4,6 +4,23 @@ use anchor_spl::{
     token::{ close_account, transfer, CloseAccount, Mint, Token, TokenAccount, Transfer },
 };
 
+#[derive(Accounts)]
+pub struct Take<'info> {
+    #[account(mut)]
+    pub taker: Signer<'info>,
+
+    pub mint_a: Account<'info, Mint>,
+    pub mint_b: Account<'info, Mint>,
+
+    // taker's token account
+    #[account(
+        mut, 
+        // constraints: guarantees the tokens coming in are the one we want
+        associated_token::mint = mint_b,
+        associated_token::authority = taker,
+    )]
+    pub taker_ata_b: Account<'info, TokenAccount>,
+}
 
 // pub fn take(ctx: Context<Take>, seed: u64, make_amount: u64, take_amount: u64) -> Result<()> {
     //     // saving state to escrow here

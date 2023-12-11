@@ -18,8 +18,9 @@ pub mod escrow {
     }
 
     pub fn refund(ctx: Context<Refund>) -> Result<()> {
-        ctx.accounts.refund()
+        ctx.accounts.refund()?;
         // now we need to close the vault
+        ctx.accounts.close_vault()
     }
 
 
