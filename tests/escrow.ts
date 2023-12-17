@@ -199,7 +199,7 @@ describe("escrow", () => {
         systemProgram: SystemProgram.programId,
       })
       .signers([taker])
-      .rpc()
+      .rpc({ skipPreflight: true })
       .then(confirm)
       .then(log);
   });

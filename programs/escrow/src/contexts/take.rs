@@ -5,8 +5,6 @@ use anchor_spl::{
 };
 
 #[derive(Accounts)]
-// need a seed if we want to create multiple escrows
-#[instruction(seed: u64)]
 pub struct Take<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,
@@ -37,7 +35,7 @@ pub struct Take<'info> {
 
     #[account(
         init, 
-        payer = maker,
+        payer = taker,
         associated_token::mint = mint_b,
         associated_token::authority = maker,
     )]
@@ -56,7 +54,7 @@ pub struct Take<'info> {
         mut, // so we can close the account
         close = maker,
         // note: prepend "escrow" to the seed to avoid collisions (turns "escrow" into bytes)
-        seeds = [b"escrow".as_ref(), maker.key().as_ref(), seed.to_le_bytes().as_ref()],
+        seeds = [b"escrow".as_ref(), maker.key().as_ref(), escrow.seed.to_le_bytes().as_ref()],
         bump = escrow.bump,
         has_one = mint_a,
         has_one = mint_b
@@ -84,7 +82,6 @@ impl <'info>Take<'info> {
 
     // Send money from vault to taker
     pub fn withdraw(&mut self) -> Result<()> {
-        // messy rust/anchor thing - just copy when needed
         let seed = self.escrow.seed.to_le_bytes().clone();
 
         let signer_seeds = &[
