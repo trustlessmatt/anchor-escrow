@@ -32,9 +32,9 @@ pub struct Refund<'info> {
     pub escrow: Account<'info, Escrow>,
 
     #[account(
-        seeds = [b"vault", escrow.key().as_ref()], 
-        bump,
+        mut,
         token::mint = mint_a,
+        // derive from escrow
         token::authority = escrow,
     )]
     pub vault: Account<'info, TokenAccount>,
@@ -58,21 +58,21 @@ impl <'info>Refund<'info> {
         };
 
         // messy rust/anchor thing - just copy when needed
-        let seed = self.escrow.seed.to_le_bytes().clone();
+        let binding = self.escrow.seed.to_le_bytes().clone();
 
-        let signer_seeds = &[
+        let seeds = &[
             b"escrow", 
             self.maker.to_account_info().key.as_ref(),
-            seed.as_ref(),
+            binding.as_ref(),
             &[self.escrow.bump]
             ];
 
-        let binding = &[&signer_seeds[..]];
+        let signer_seeds = &[&seeds[..]];
 
         let cpi_ctx = CpiContext::new_with_signer(
             self.token_program.to_account_info(),
             transfer_accounts,
-            binding
+            signer_seeds
         );
 
         transfer(cpi_ctx, self.vault.amount)
@@ -87,9 +87,21 @@ impl <'info>Refund<'info> {
             authority: self.escrow.to_account_info()
         };
 
-        let cpi_ctx = CpiContext::new(
+        // messy rust/anchor thing - just copy when needed
+        let binding = self.escrow.seed.to_le_bytes().clone();
+
+        let seeds = &[
+            b"escrow", 
+            self.maker.to_account_info().key.as_ref(),
+            binding.as_ref(),
+            &[self.escrow.bump]
+            ];
+
+        let signer_seeds = &[&seeds[..]];
+
+        let cpi_ctx = CpiContext::new_with_signer(
             self.token_program.to_account_info(),
-            close_accounts
+            close_accounts, signer_seeds
         );
 
         close_account(cpi_ctx)

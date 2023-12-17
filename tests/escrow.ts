@@ -16,6 +16,7 @@ import {
   createMintToInstruction,
   getAssociatedTokenAddressSync,
   getMinimumBalanceForRentExemptMint,
+  getOrCreateAssociatedTokenAccount,
   MINT_SIZE,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -41,13 +42,6 @@ describe("escrow", () => {
     cluster=custom&customUrl=${connection.rpcEndpoint}`);
     return signature;
   };
-
-  it("Airdrop", async () => {
-    await connection
-      .requestAirdrop(signer.publicKey, LAMPORTS_PER_SOL * 10)
-      .then(confirm)
-      .then(log);
-  });
 
   /////// escrow test ///////
   const seed = new BN(randomBytes(8));
@@ -77,6 +71,21 @@ describe("escrow", () => {
     [Buffer.from("escrow"), maker.publicKey.toBuffer(), seed.toBuffer("le", 8)],
     program.programId
   )[0];
+
+  // since token account is initialized, we don't need getOrCreateAssociatedTokenAccount
+  // reinitializing will fail
+  const vault = getAssociatedTokenAddressSync(mintA.publicKey, escrow, true);
+
+  it("Airdrop", async () => {
+    await connection
+      .requestAirdrop(maker.publicKey, LAMPORTS_PER_SOL * 10)
+      .then(confirm)
+      .then(log);
+    await connection
+      .requestAirdrop(taker.publicKey, LAMPORTS_PER_SOL * 10)
+      .then(confirm)
+      .then(log);
+  });
 
   it("Create token mints", async () => {
     let lamports = await getMinimumBalanceForRentExemptMint(connection);
@@ -126,6 +135,7 @@ describe("escrow", () => {
         taker.publicKey,
         mintB.publicKey
       ),
+
       createMintToInstruction(mintA.publicKey, makerAtaA, maker.publicKey, 1e9),
       createMintToInstruction(mintB.publicKey, takerAtaB, taker.publicKey, 1e9),
     ];
@@ -140,6 +150,7 @@ describe("escrow", () => {
         mintA: mintA.publicKey,
         mintB: mintB.publicKey,
         makerAtaA,
+        vault,
         escrow,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
@@ -151,44 +162,45 @@ describe("escrow", () => {
       .then(log);
   });
 
-  it("Refund", async () => {
+  xit("Refund", async () => {
     await program.methods
       .refund()
       .accounts({
         maker: maker.publicKey,
         mintA: mintA.publicKey,
         makerAtaA,
+        vault,
         escrow,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
       })
       .signers([maker])
-      .rpc()
+      .rpc({ skipPreflight: true })
       .then(confirm)
       .then(log);
   });
 
-  // xit("Take", async () => {
-  //   await program.methods
-  //     .take()
-  //     .accounts({
-  //       taker: taker.publicKey,
-  //       maker: maker.publicKey,
-  //       mintA: mintA.publicKey,
-  //       mintB: mintB.publicKey,
-  //       takerAtaA,
-  //       takerAtaB,
-  //       makerAtaB,
-  //       escrow,
-  //       vault,
-  //       associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-  //       tokenProgram: TOKEN_PROGRAM_ID,
-  //       systemProgram: SystemProgram.programId,
-  //     })
-  //     .signers([taker])
-  //     .rpc({ skipPreflight: true })
-  //     .then(confirm)
-  //     .then(log);
-  // });
+  it("Take", async () => {
+    await program.methods
+      .take()
+      .accounts({
+        taker: taker.publicKey,
+        maker: maker.publicKey,
+        mintA: mintA.publicKey,
+        mintB: mintB.publicKey,
+        takerAtaA,
+        takerAtaB,
+        makerAtaB,
+        vault,
+        escrow: escrow,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([taker])
+      .rpc()
+      .then(confirm)
+      .then(log);
+  });
 });

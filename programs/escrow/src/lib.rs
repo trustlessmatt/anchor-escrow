@@ -23,5 +23,12 @@ pub mod escrow {
         ctx.accounts.close_vault()
     }
 
+    pub fn take(ctx: Context<Take>) -> Result<()> {
+        ctx.accounts.deposit()?;
+        ctx.accounts.withdraw()?;
+        // now close the vault
+        ctx.accounts.close_vault()
+    }
+
 
 }
