@@ -25,6 +25,15 @@ pub struct Make<'info> {
     )]
     pub maker_ata_a: Account<'info, TokenAccount>,
 
+    // maker creates the vault - derive the vault address from the escrow
+    #[account(
+        init,
+        payer = maker,
+        associated_token::mint = mint_a,
+        associated_token::authority = escrow,
+    )]
+    pub vault: Account<'info, TokenAccount>,
+
     // account to store escrow details
     #[account(
         init,
@@ -35,15 +44,6 @@ pub struct Make<'info> {
         bump,
     )]
     pub escrow: Account<'info, Escrow>,
-
-    // maker creates the vault - derive the vault address from the escrow
-    #[account(
-        init,
-        payer = maker,
-        associated_token::mint = mint_a,
-        associated_token::authority = escrow,
-    )]
-    pub vault: Account<'info, TokenAccount>,
 
     pub system_program: Program<'info, System>,
     // since we're using spl tokens not lamports:

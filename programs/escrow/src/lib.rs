@@ -13,13 +13,13 @@ pub mod escrow {
     use super::*;
 
     pub fn make(ctx: Context<Make>, seed: u64, deposit: u64, receive: u64) -> Result<()> {
-        ctx.accounts.save_escrow(seed, receive, &ctx.bumps)?; // cheaper to pass reference to bumps than to clone it
-        ctx.accounts.make(deposit)
+        ctx.accounts.make(deposit)?;
+        ctx.accounts.save_escrow(seed, receive, &ctx.bumps) // cheaper to pass reference to bumps than to clone it
     }
 
     pub fn refund(ctx: Context<Refund>) -> Result<()> {
         ctx.accounts.refund()?;
-        // now we need to close the vault
+        // now close the vault
         ctx.accounts.close_vault()
     }
 
