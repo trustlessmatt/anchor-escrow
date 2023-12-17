@@ -22,6 +22,8 @@ pub struct Refund<'info> {
         // set mutable with close constraint
         mut,
         close = maker,
+        // check that there is a valid mint_a
+        has_one = mint_a,
         // requires seed constraints otherwise anyone can hack your escrow
         seeds = [b"escrow".as_ref(), maker.key().as_ref(), escrow.seed.to_le_bytes().as_ref()],
         // saved the bump
@@ -73,27 +75,14 @@ impl <'info>Refund<'info> {
             binding
         );
 
-        transfer(cpi_ctx, self.vault.amount)?;
+        transfer(cpi_ctx, self.vault.amount)
 
-        let close_accounts = CloseAccount {
-            account: self.vault.to_account_info(),
-            destination: self.maker.to_account_info(),
-            authority: self.escrow.to_account_info()
-        };
-
-        let cpi_ctx = CpiContext::new_with_signer(
-            self.token_program.to_account_info(),
-            close_accounts,
-            binding
-        );
-
-        close_account(cpi_ctx)
     }
 
     pub fn close_vault(&mut self) -> Result<()> {
 
         let close_accounts = CloseAccount {
-            account: self.escrow.to_account_info(),
+            account: self.vault.to_account_info(),
             destination: self.maker.to_account_info(),
             authority: self.escrow.to_account_info()
         };
