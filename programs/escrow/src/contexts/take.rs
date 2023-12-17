@@ -1,7 +1,7 @@
 use crate::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{ transfer, Mint, Token, TokenAccount, Transfer },
+    token::{ transfer, Mint, Token, TokenAccount, Transfer, CloseAccount, close_account },
 };
 
 #[derive(Accounts)]

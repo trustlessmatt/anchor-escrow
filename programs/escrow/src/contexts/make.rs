@@ -25,16 +25,16 @@ pub struct Make<'info> {
     )]
     pub maker_ata_a: Account<'info, TokenAccount>,
 
-    // maker creates the vault - derive the vault address from the escrow
+    // token account - derive the vault address from the escrow
     #[account(
-        init,
+        init_if_needed,
         payer = maker,
         associated_token::mint = mint_a,
         associated_token::authority = escrow,
     )]
     pub vault: Account<'info, TokenAccount>,
 
-    // account to store escrow details
+    // program account to store escrow details
     #[account(
         init,
         payer = maker,
